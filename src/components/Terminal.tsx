@@ -53,7 +53,7 @@ function reducer(s: State, a: Action): State {
 
 const init: State = {
   module: "overview", payments: PAYMENTS, kycs: KYCS, properties: PROPERTIES, payouts: PAYOUTS, tickets: TICKETS,
-  selected: { overview: PAYMENTS[0].id, kyc: KYCS[0].id, property: PROPERTIES[0].id, shortstay: null, mpesa: PAYOUTS[0].id, tickets: TICKETS[0].id },
+  selected: { overview: PAYMENTS[0]!.id, kyc: KYCS[0]!.id, property: PROPERTIES[0]!.id, shortstay: null, mpesa: PAYOUTS[0]!.id, tickets: TICKETS[0]!.id },
   page: { overview: 0, kyc: 0, property: 0, shortstay: 0, mpesa: 0, tickets: 0 },
   log: [],
 };

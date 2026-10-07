@@ -11,7 +11,7 @@ const LOCS: [string, string][] = [["Westlands","Nairobi"],["Kilimani","Nairobi"]
 
 let seed = 42;
 const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
+const pick = <T,>(a: T[]): T => a[Math.floor(rnd() * a.length)] as T;
 const AL = "ABCDEFGHJKLMNPQRSTUVWXYZ";
 const DG = "0123456789";
 const mpesa = () => {
@@ -55,7 +55,7 @@ export const PROPERTIES: Property[] = Array.from({ length: 48 }, () => {
   const [sub, county] = pick(LOCS);
   const type = category === "Airbnb" ? "Short-stay" : rnd() > 0.75 ? "Sale" : "Rent";
   const price = type === "Sale" ? pick([4500000, 8750000, 12500000, 32000000]) : type === "Short-stay" ? pick([3500, 6500, 9800, 15000]) : category === "Bedsitter" ? pick([8000, 12000, 15000]) : pick([35000, 65000, 120000, 250000]);
-  return { id: uuid(), title: `${pick(TITLES[category])} — ${sub}`, owner: pick(NAMES), location: `${sub}, ${county}`, county: countyOf(county), category, price, type, status: rnd() > 0.45 ? "PENDING_MODERATION" : rnd() > 0.3 ? "ACTIVE" : "REJECTED", score: { docs: Math.floor(50 + rnd() * 50), photos: Math.floor(40 + rnd() * 60), geo: Math.floor(60 + rnd() * 40), owner: Math.floor(50 + rnd() * 50) } };
+  return { id: uuid(), title: `${pick(TITLES[category]!)} — ${sub}`, owner: pick(NAMES), location: `${sub}, ${county}`, county: countyOf(county), category, price, type, status: rnd() > 0.45 ? "PENDING_MODERATION" : rnd() > 0.3 ? "ACTIVE" : "REJECTED", score: { docs: Math.floor(50 + rnd() * 50), photos: Math.floor(40 + rnd() * 60), geo: Math.floor(60 + rnd() * 40), owner: Math.floor(50 + rnd() * 50) } };
 });
 
 export const PAYOUTS: Payout[] = Array.from({ length: 36 }, () => ({
