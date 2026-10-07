@@ -122,6 +122,12 @@
   }
 }
 
+[data-density="comfortable"] tbody td { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
 @utility btn-primary {
   background: var(--color-primary);
   color: var(--color-primary-foreground);
