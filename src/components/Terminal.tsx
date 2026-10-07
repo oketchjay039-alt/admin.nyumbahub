@@ -331,9 +331,9 @@ export function Terminal() {
             <Kpi l="Pending KYC Queue" v={`${pendingKyc} UNREVIEWED`} s="SLA: < 2 Hours" c="text-warn-strong" />
             <Kpi l="Gateway Health" v="99.4% SUCCESS" s="Daraja B2C/STK Rails" c="text-ok" />
           </div>
-          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,7fr)_minmax(0,3fr)] gap-3 p-3">
-            <div className="min-h-0 min-w-0">{grid}</div>
-            <div className="min-h-0 min-w-0">{inspector}</div>
+          <div className="flex min-h-0 flex-1 gap-3 p-3">
+            <div className="min-h-0 w-[70%] min-w-0">{grid}</div>
+            <div className="min-h-0 min-w-0 flex-1">{inspector}</div>
           </div>
         </main>
       </div>
