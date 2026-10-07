@@ -32,7 +32,7 @@ export const kes = (n: number) => `KES ${n.toLocaleString("en-KE", { minimumFrac
 export type Status = string;
 
 export interface Payment { id: string; ts: string; receipt: string; phone: string; amount: number; type: string; status: Status; name: string; merchantId: string; checkoutId: string; county: string }
-export interface Kyc { id: string; name: string; phone: string; doc: string; county: string; submitted: string; status: Status; idNumber: string; reason?: string }
+export interface Kyc { id: string; name: string; phone: string; doc: string; county: string; submitted: string; status: Status; idNumber: string; reason?: string | undefined }
 export interface Property { id: string; title: string; owner: string; location: string; county: string; category: string; price: number; type: string; status: Status; score: { docs: number; photos: number; geo: number; owner: number } }
 export interface Payout { id: string; host: string; phone: string; ref: string; gross: number; commission: number; status: Status; county: string }
 export interface Ticket { id: string; subject: string; user: string; phone: string; priority: string; channel: string; opened: string; status: Status; body: string; county: string }
