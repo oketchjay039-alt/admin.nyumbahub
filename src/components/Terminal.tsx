@@ -1,16 +1,19 @@
 import { useMemo, useReducer, useState, type ReactNode } from "react";
-import { Activity, BadgeCheck, Building2, CalendarRange, LifeBuoy, Search, Wallet, ChevronLeft, ChevronRight, RefreshCw, FileText, Image as ImageIcon } from "lucide-react";
+import { Activity, BadgeCheck, Building2, CalendarRange, LifeBuoy, Search, Wallet, ChevronLeft, ChevronRight, RefreshCw, FileText, Image as ImageIcon, Settings, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TerminalSettings, LiveClock, DEFAULT_PREFERENCES, type TerminalPreferences } from "@/components/TerminalSettings";
 import { COUNTIES, PAYMENTS, KYCS, PROPERTIES, PAYOUTS, TICKETS, kes, statusTone, type Payment, type Kyc, type Property, type Payout, type Ticket } from "@/lib/terminal-data";
 
-type ModuleKey = "overview" | "kyc" | "property" | "shortstay" | "mpesa" | "tickets";
+type ModuleKey = "overview" | "kyc" | "property" | "shortstay" | "mpesa" | "tickets" | "settings";
 
 const NAV: { key: ModuleKey; label: string; icon: typeof Activity }[] = [
-  { key: "overview", label: "01. Executive Overview", icon: Activity },
-  { key: "kyc", label: "02. Identity & KYC Queue", icon: BadgeCheck },
-  { key: "property", label: "03. Property Moderation", icon: Building2 },
-  { key: "shortstay", label: "04. Short-Stay Ledger", icon: CalendarRange },
-  { key: "mpesa", label: "05. M-Pesa Financials", icon: Wallet },
-  { key: "tickets", label: "06. Support & Ticketing", icon: LifeBuoy },
+  { key: "overview", label: "Executive Overview", icon: Activity },
+  { key: "kyc", label: "Identity & KYC Queue", icon: BadgeCheck },
+  { key: "property", label: "Property Moderation", icon: Building2 },
+  { key: "shortstay", label: "Short-Stay Ledger", icon: CalendarRange },
+  { key: "mpesa", label: "M-Pesa Financials", icon: Wallet },
+  { key: "tickets", label: "Support & Ticketing", icon: LifeBuoy },
+  { key: "settings", label: "Settings", icon: Settings },
 ];
 
 interface State {
@@ -53,8 +56,8 @@ function reducer(s: State, a: Action): State {
 
 const init: State = {
   module: "overview", payments: PAYMENTS, kycs: KYCS, properties: PROPERTIES, payouts: PAYOUTS, tickets: TICKETS,
-  selected: { overview: PAYMENTS[0]!.id, kyc: KYCS[0]!.id, property: PROPERTIES[0]!.id, shortstay: null, mpesa: PAYOUTS[0]!.id, tickets: TICKETS[0]!.id },
-  page: { overview: 0, kyc: 0, property: 0, shortstay: 0, mpesa: 0, tickets: 0 },
+  selected: { overview: PAYMENTS[0]?.id ?? null, kyc: KYCS[0]?.id ?? null, property: PROPERTIES[0]?.id ?? null, shortstay: null, mpesa: PAYOUTS[0]?.id ?? null, tickets: TICKETS[0]?.id ?? null, settings: null },
+  page: { overview: 0, kyc: 0, property: 0, shortstay: 0, mpesa: 0, tickets: 0, settings: 0 },
   log: [],
 };
 
@@ -137,6 +140,14 @@ export function Terminal() {
   const [allCounties, setAllCounties] = useState(true);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
+  const applyPreferences = (next: TerminalPreferences) => {
+    setPreferences(next);
+    setCounty(next.county);
+    setAllCounties(next.allCounties);
+    d({ t: "log", msg: "SETTINGS SESSION PREFERENCES APPLIED" });
+  };
 
   const match = (r: object & { county?: string }) => {
     if (!allCounties && r.county && r.county !== county) return false;
@@ -292,9 +303,9 @@ export function Terminal() {
   }
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-background">
-      <header className="flex h-12 shrink-0 items-center justify-between gap-4 border-b border-topbar-border bg-topbar px-4 text-topbar-foreground">
-        <span className="whitespace-nowrap font-mono text-xs font-bold tracking-widest text-topbar-accent">NYUMBAHUB :: ENTERPRISE CONTROL TERMINAL</span>
+    <div data-density={preferences.density} className="flex h-screen w-screen flex-col overflow-hidden bg-background">
+      <header className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-topbar-border bg-topbar px-3 py-2 text-topbar-foreground">
+        <div className="flex items-center gap-2"><Button variant="ghost" size="icon" className="h-7 w-7 text-topbar-accent hover:bg-topbar-border hover:text-topbar-accent" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand sidebar" : "Collapse sidebar"} onClick={() => setCollapsed(!collapsed)}>{collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}</Button><span className="whitespace-nowrap font-mono text-xs font-bold text-topbar-accent">NYUMBAHUB <span className="hidden 2xl:inline">:: CONTROL TERMINAL</span></span></div>
         <div className="flex max-w-md flex-1 items-center border border-topbar-border bg-topbar px-2">
           <Search className="h-3.5 w-3.5 text-topbar-muted" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search M-Pesa code, phone, UUID, name…" className="h-7 w-full bg-transparent px-2 font-mono text-xs text-topbar-foreground outline-none placeholder:text-topbar-muted" />
@@ -304,27 +315,26 @@ export function Terminal() {
           <select value={county} onChange={(e) => { setCounty(e.target.value); setAllCounties(false); }} className="h-7 border border-topbar-border bg-topbar px-2 font-mono text-xs text-topbar-foreground outline-none">
             {COUNTIES.map((c) => <option key={c}>{c}</option>)}
           </select>
-          <span className="whitespace-nowrap border border-topbar-accent px-2 py-0.5 font-mono text-[11px] text-topbar-accent">[SYS_ADMIN :: ELIJA_JUMA]</span>
+          <span className="hidden whitespace-nowrap border border-topbar-accent px-2 py-0.5 font-mono text-[11px] text-topbar-accent xl:block">[SYS_ADMIN :: ELIJA_JUMA]</span>
         </div>
       </header>
       <div className="flex min-h-0 flex-1">
-        <nav className="flex w-56 shrink-0 flex-col justify-between border-r border-border bg-card">
-          <div>
+        <nav aria-label="Modules" className={`flex shrink-0 flex-col justify-between border-r border-border bg-card ${collapsed ? "w-14" : "w-56"}`}>
+          <div className="min-h-0 overflow-y-auto">
             {NAV.map(({ key, label, icon: Icon }) => (
-              <button key={key} onClick={() => d({ t: "module", m: key })} className={`flex w-full items-center gap-2 border-b border-border-subtle p-3 text-left font-mono text-xs uppercase ${m === key ? "border-l-2 border-l-active bg-active-soft font-bold text-primary" : "hover:bg-muted"}`}>
-                <Icon className="h-3.5 w-3.5 shrink-0" />{label}
-              </button>
+              <Button key={key} variant="ghost" aria-label={label} aria-current={m === key ? "page" : undefined} title={collapsed ? label : undefined} onClick={() => d({ t: "module", m: key })} className={`h-11 w-full gap-3 border-b border-border-subtle px-3 text-left text-xs ${collapsed ? "justify-center" : "justify-start"} ${m === key ? "border-l-2 border-l-active bg-active-soft font-semibold text-primary" : "hover:bg-muted"}`}>
+                <Icon className="h-4 w-4 shrink-0" />{!collapsed && label}
+              </Button>
             ))}
-            <div className="p-3">
+            {!collapsed && preferences.showAudit && <div className="p-3">
               <div className="mb-1 font-mono text-[10px] uppercase text-muted-foreground">Ops Audit Log</div>
               <div className="max-h-48 space-y-0.5 overflow-auto font-mono text-[10px]">{s.log.length ? s.log.map((l, i) => <div key={i} className="truncate">{l}</div>) : <div className="text-muted-foreground">— no actions —</div>}</div>
-            </div>
+            </div>}
           </div>
-          <div className="flex items-center gap-2 border-t border-border p-3 font-mono text-[10px]">
-            <span className="h-2 w-2 animate-pulse bg-ok-strong" />GATEWAY: DARAJA ONLINE [200 OK]
-          </div>
+          <div className="shrink-0"><LiveClock timezone={preferences.timezone} hour12={preferences.hour12} collapsed={collapsed} /><div title="Demo gateway status" className="flex items-center justify-center gap-2 border-t border-border p-3 font-mono text-[10px]"><span className="h-2 w-2 bg-warn-strong" />{!collapsed && "DARAJA · DEMO"}</div></div>
         </nav>
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          {m === "settings" ? <div className="min-h-0 flex-1 p-3"><TerminalSettings value={preferences} onApply={applyPreferences} /></div> : <>
           <div className="grid h-16 shrink-0 grid-cols-4 gap-3 bg-background p-3 pb-0 box-content">
             <Kpi l="Active Properties" v="14,280" s="47 Counties Active" c="text-foreground" />
             <Kpi l="Gross Revenue (MTD)" v="KES 48,250,000.00" s="M-Pesa STK + Card" c="text-primary" />
@@ -335,6 +345,7 @@ export function Terminal() {
             <div className="min-h-0 w-[70%] min-w-0">{grid}</div>
             <div className="min-h-0 min-w-0 flex-1">{inspector}</div>
           </div>
+          </>}
         </main>
       </div>
     </div>
