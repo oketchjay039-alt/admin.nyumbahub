@@ -324,16 +324,16 @@ export function Terminal() {
             <span className="h-2 w-2 animate-pulse bg-ok-strong" />GATEWAY: DARAJA ONLINE [200 OK]
           </div>
         </nav>
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <div className="grid h-16 shrink-0 grid-cols-4 gap-3 bg-background p-3 pb-0 box-content">
             <Kpi l="Active Properties" v="14,280" s="47 Counties Active" c="text-foreground" />
             <Kpi l="Gross Revenue (MTD)" v="KES 48,250,000.00" s="M-Pesa STK + Card" c="text-primary" />
             <Kpi l="Pending KYC Queue" v={`${pendingKyc} UNREVIEWED`} s="SLA: < 2 Hours" c="text-warn-strong" />
             <Kpi l="Gateway Health" v="99.4% SUCCESS" s="Daraja B2C/STK Rails" c="text-ok" />
           </div>
-          <div className="grid min-h-0 flex-1 grid-cols-[7fr_3fr] gap-3 p-3">
-            <div className="min-h-0">{grid}</div>
-            <div className="min-h-0">{inspector}</div>
+          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,7fr)_minmax(0,3fr)] gap-3 p-3">
+            <div className="min-h-0 min-w-0">{grid}</div>
+            <div className="min-h-0 min-w-0">{inspector}</div>
           </div>
         </main>
       </div>
