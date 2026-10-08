@@ -1,5 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Terminal } from "@/components/Terminal";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -12,5 +11,7 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Terminal,
+  beforeLoad: () => {
+    throw redirect({ to: "/terminal" });
+  },
 });
