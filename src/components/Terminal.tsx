@@ -2,6 +2,7 @@ import { useMemo, useReducer, useState, type ReactNode } from "react";
 import { Activity, BadgeCheck, Building2, CalendarRange, LifeBuoy, Search, Wallet, ChevronLeft, ChevronRight, RefreshCw, FileText, Image as ImageIcon, Settings, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TerminalSettings, LiveClock, DEFAULT_PREFERENCES, type TerminalPreferences } from "@/components/TerminalSettings";
+import { TicketTriage } from "@/components/TicketTriage";
 import { COUNTIES, PAYMENTS, KYCS, PROPERTIES, PAYOUTS, TICKETS, kes, statusTone, type Payment, type Kyc, type Property, type Payout, type Ticket } from "@/lib/terminal-data";
 
 type ModuleKey = "overview" | "kyc" | "property" | "shortstay" | "mpesa" | "tickets" | "settings";
@@ -33,6 +34,7 @@ type Action =
   | { t: "payout"; id: string }
   | { t: "payment"; id: string; status: string }
   | { t: "ticket"; id: string; status: string }
+  | { t: "ticketPri"; id: string; priority: string }
   | { t: "log"; msg: string };
 
 const stamp = () => new Date().toISOString().slice(11, 19);
@@ -50,6 +52,7 @@ function reducer(s: State, a: Action): State {
     case "payout": return { ...s, payouts: upd(s.payouts, a.id, { status: "COMPLETED" }), log: log(`B2C DISBURSED ${a.id.slice(0, 8)}`) };
     case "payment": return { ...s, payments: upd(s.payments, a.id, { status: a.status }), log: log(`DARAJA RE-QUERY ${a.id.slice(0, 8)} -> ${a.status}`) };
     case "ticket": return { ...s, tickets: upd(s.tickets, a.id, { status: a.status }), log: log(`${a.id} -> ${a.status}`) };
+    case "ticketPri": return { ...s, tickets: upd(s.tickets, a.id, { priority: a.priority }), log: log(`${a.id} PRIORITY -> ${a.priority} (AI)`) };
     case "log": return { ...s, log: log(a.msg) };
   }
 }
@@ -299,6 +302,7 @@ export function Terminal() {
         <button className="btn-secondary" onClick={() => d({ t: "ticket", id: t.id, status: "IN_REVIEW" })}>Escalate</button>
         <button className="btn-primary" disabled={t.status === "RESOLVED"} onClick={() => d({ t: "ticket", id: t.id, status: "RESOLVED" })}>Resolve</button>
       </div>
+      <TicketTriage ticketId={t.id} initial={`${t.subject}\n\n${t.body}`} onApplyPriority={(p) => d({ t: "ticketPri", id: t.id, priority: p })} />
     </> : <Empty />}</Inspector>;
   }
 
