@@ -136,7 +136,8 @@ function Inspector({ title, children }: { title: string; children: ReactNode }) 
 
 const Section = ({ h }: { h: string }) => <div className="font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{h}</div>;
 
-export function Terminal() {
+export interface TerminalUser { id: string; full_name: string; email: string; department: string; isSuperAdmin: boolean }
+export function Terminal({ me }: { me?: TerminalUser } = {}) {
   const [s, d] = useReducer(reducer, init);
   const [q, setQ] = useState("");
   const [county, setCounty] = useState("Nairobi County");
@@ -319,7 +320,7 @@ export function Terminal() {
           <select value={county} onChange={(e) => { setCounty(e.target.value); setAllCounties(false); }} className="h-7 border border-topbar-border bg-topbar px-2 font-mono text-xs text-topbar-foreground outline-none">
             {COUNTIES.map((c) => <option key={c}>{c}</option>)}
           </select>
-          <span className="hidden whitespace-nowrap border border-topbar-accent px-2 py-0.5 font-mono text-[11px] text-topbar-accent xl:block">[SYS_ADMIN :: ELIJA_JUMA]</span>
+          <span className="hidden whitespace-nowrap border border-topbar-accent px-2 py-0.5 font-mono text-[11px] text-topbar-accent xl:block">[{me?.isSuperAdmin ? "SUPER_ADMIN" : "ADMIN"} :: {(me?.full_name ?? "ELIJA JUMA").toUpperCase().replace(/\s+/g, "_")}]</span>
         </div>
       </header>
       <div className="flex min-h-0 flex-1">
