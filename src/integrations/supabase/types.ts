@@ -14,16 +14,198 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      mail_attachments: {
+        Row: {
+          id: string
+          message_id: string
+          mime: string | null
+          name: string
+          path: string
+          size: number
+        }
+        Insert: {
+          id?: string
+          message_id: string
+          mime?: string | null
+          name: string
+          path: string
+          size?: number
+        }
+        Update: {
+          id?: string
+          message_id?: string
+          mime?: string | null
+          name?: string
+          path?: string
+          size?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "mail_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mail_messages: {
+        Row: {
+          body: string
+          confidential: boolean
+          created_at: string
+          id: string
+          labels: string[]
+          priority: Database["public"]["Enums"]["mail_priority"]
+          sender_id: string
+          subject: string
+          thread_id: string
+          to_label: string
+        }
+        Insert: {
+          body: string
+          confidential?: boolean
+          created_at?: string
+          id?: string
+          labels?: string[]
+          priority?: Database["public"]["Enums"]["mail_priority"]
+          sender_id: string
+          subject: string
+          thread_id: string
+          to_label?: string
+        }
+        Update: {
+          body?: string
+          confidential?: boolean
+          created_at?: string
+          id?: string
+          labels?: string[]
+          priority?: Database["public"]["Enums"]["mail_priority"]
+          sender_id?: string
+          subject?: string
+          thread_id?: string
+          to_label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mail_recipients: {
+        Row: {
+          archived: boolean
+          id: string
+          message_id: string
+          read_at: string | null
+          starred: boolean
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          id?: string
+          message_id: string
+          read_at?: string | null
+          starred?: boolean
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          id?: string
+          message_id?: string
+          read_at?: string | null
+          starred?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_recipients_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "mail_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_recipients_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          active: boolean
+          created_at: string
+          department: string
+          email: string
+          full_name: string
+          id: string
+          title: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          department?: string
+          email: string
+          full_name: string
+          id: string
+          title?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          department?: string
+          email?: string
+          full_name?: string
+          id?: string
+          title?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_read_message: {
+        Args: { _message_id: string; _user: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "super_admin" | "admin"
+      mail_priority: "normal" | "high" | "urgent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +332,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["super_admin", "admin"],
+      mail_priority: ["normal", "high", "urgent"],
+    },
   },
 } as const
