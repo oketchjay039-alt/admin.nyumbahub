@@ -18,7 +18,7 @@ Given a customer support ticket, return:
 - reply: a polite, concise draft reply to the customer (under 120 words), in English, signed "NyumbaHub Support". Never promise refunds or timelines you cannot verify; never ask for PINs.`;
 
 export async function triageTicket(message: string): Promise<TicketTriage> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env['LOVABLE_API_KEY'];
   if (!apiKey) throw new Error("AI is not configured (missing key).");
   const provider = createOpenAI({
     baseURL: "https://ai.gateway.lovable.dev/v1",
