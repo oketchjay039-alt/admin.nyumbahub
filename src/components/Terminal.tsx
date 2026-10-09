@@ -1,11 +1,13 @@
 import { useMemo, useReducer, useState, type ReactNode } from "react";
-import { Activity, BadgeCheck, Building2, CalendarRange, LifeBuoy, Search, Wallet, ChevronLeft, ChevronRight, RefreshCw, FileText, Image as ImageIcon, Settings, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Activity, BadgeCheck, Building2, CalendarRange, LifeBuoy, Search, Wallet, ChevronLeft, ChevronRight, RefreshCw, FileText, Image as ImageIcon, Settings, PanelLeftClose, PanelLeftOpen, Inbox, Send } from "lucide-react";
+import { useMail } from "@/components/mail/useMail";
+import { MailCenter } from "@/components/mail/MailCenter";
 import { Button } from "@/components/ui/button";
 import { TerminalSettings, LiveClock, DEFAULT_PREFERENCES, type TerminalPreferences } from "@/components/TerminalSettings";
 import { TicketTriage } from "@/components/TicketTriage";
 import { COUNTIES, PAYMENTS, KYCS, PROPERTIES, PAYOUTS, TICKETS, kes, statusTone, type Payment, type Kyc, type Property, type Payout, type Ticket } from "@/lib/terminal-data";
 
-type ModuleKey = "overview" | "kyc" | "property" | "shortstay" | "mpesa" | "tickets" | "settings";
+type ModuleKey = "overview" | "kyc" | "property" | "shortstay" | "mpesa" | "tickets" | "inbox" | "outbox" | "settings";
 
 const NAV: { key: ModuleKey; label: string; icon: typeof Activity }[] = [
   { key: "overview", label: "Executive Overview", icon: Activity },
@@ -14,6 +16,8 @@ const NAV: { key: ModuleKey; label: string; icon: typeof Activity }[] = [
   { key: "shortstay", label: "Short-Stay Ledger", icon: CalendarRange },
   { key: "mpesa", label: "M-Pesa Financials", icon: Wallet },
   { key: "tickets", label: "Support & Ticketing", icon: LifeBuoy },
+  { key: "inbox", label: "Inbox", icon: Inbox },
+  { key: "outbox", label: "Outbox", icon: Send },
   { key: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -59,8 +63,8 @@ function reducer(s: State, a: Action): State {
 
 const init: State = {
   module: "overview", payments: PAYMENTS, kycs: KYCS, properties: PROPERTIES, payouts: PAYOUTS, tickets: TICKETS,
-  selected: { overview: PAYMENTS[0]?.id ?? null, kyc: KYCS[0]?.id ?? null, property: PROPERTIES[0]?.id ?? null, shortstay: null, mpesa: PAYOUTS[0]?.id ?? null, tickets: TICKETS[0]?.id ?? null, settings: null },
-  page: { overview: 0, kyc: 0, property: 0, shortstay: 0, mpesa: 0, tickets: 0, settings: 0 },
+  selected: { overview: PAYMENTS[0]?.id ?? null, kyc: KYCS[0]?.id ?? null, property: PROPERTIES[0]?.id ?? null, shortstay: null, mpesa: PAYOUTS[0]?.id ?? null, tickets: TICKETS[0]?.id ?? null, inbox: null, outbox: null, settings: null },
+  page: { overview: 0, kyc: 0, property: 0, shortstay: 0, mpesa: 0, tickets: 0, inbox: 0, outbox: 0, settings: 0 },
   log: [],
 };
 
@@ -136,8 +140,9 @@ function Inspector({ title, children }: { title: string; children: ReactNode }) 
 
 const Section = ({ h }: { h: string }) => <div className="font-mono text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{h}</div>;
 
-export interface TerminalUser { id: string; full_name: string; email: string; department: string; isSuperAdmin: boolean }
-export function Terminal({ me }: { me?: TerminalUser } = {}) {
+export function Terminal() {
+  const mail = useMail();
+  const me = mail.me ? { full_name: mail.me.full_name, isSuperAdmin: mail.isSuperAdmin } : null;
   const [s, d] = useReducer(reducer, init);
   const [q, setQ] = useState("");
   const [county, setCounty] = useState("Nairobi County");
@@ -320,7 +325,7 @@ export function Terminal({ me }: { me?: TerminalUser } = {}) {
           <select value={county} onChange={(e) => { setCounty(e.target.value); setAllCounties(false); }} className="h-7 border border-topbar-border bg-topbar px-2 font-mono text-xs text-topbar-foreground outline-none">
             {COUNTIES.map((c) => <option key={c}>{c}</option>)}
           </select>
-          <span className="hidden whitespace-nowrap border border-topbar-accent px-2 py-0.5 font-mono text-[11px] text-topbar-accent xl:block">[{me?.isSuperAdmin ? "SUPER_ADMIN" : "ADMIN"} :: {(me?.full_name ?? "ELIJA JUMA").toUpperCase().replace(/\s+/g, "_")}]</span>
+          <span className="hidden whitespace-nowrap border border-topbar-accent px-2 py-0.5 font-mono text-[11px] text-topbar-accent xl:block">[{me?.isSuperAdmin ? "SUPER_ADMIN" : "SYS_ADMIN"} :: {(me?.full_name ?? "ELIJA JUMA").toUpperCase().replace(/\s+/g, "_")}]</span>
         </div>
       </header>
       <div className="flex min-h-0 flex-1">
@@ -328,7 +333,7 @@ export function Terminal({ me }: { me?: TerminalUser } = {}) {
           <div className="min-h-0 overflow-y-auto">
             {NAV.map(({ key, label, icon: Icon }) => (
               <Button key={key} variant="ghost" aria-label={label} aria-current={m === key ? "page" : undefined} title={collapsed ? label : undefined} onClick={() => d({ t: "module", m: key })} className={`h-11 w-full gap-3 border-b border-border-subtle px-3 text-left text-xs ${collapsed ? "justify-center" : "justify-start"} ${m === key ? "border-l-2 border-l-active bg-active-soft font-semibold text-primary" : "hover:bg-muted"}`}>
-                <Icon className="h-4 w-4 shrink-0" />{!collapsed && label}
+                <span className="relative shrink-0"><Icon className="h-4 w-4" />{key === "inbox" && mail.unread > 0 && <span aria-label={`${mail.unread} unread`} className="absolute -right-2 -top-2 min-w-4 bg-active px-1 text-center font-mono text-[9px] font-bold leading-4 text-primary-foreground">{mail.unread > 99 ? "99+" : mail.unread}</span>}</span>{!collapsed && label}{!collapsed && key === "inbox" && mail.unread > 0 && <span className="ml-auto font-mono text-[10px] font-bold text-active">{mail.unread} NEW</span>}
               </Button>
             ))}
             {!collapsed && preferences.showAudit && <div className="p-3">
@@ -339,7 +344,7 @@ export function Terminal({ me }: { me?: TerminalUser } = {}) {
           <div className="shrink-0"><LiveClock timezone={preferences.timezone} hour12={preferences.hour12} collapsed={collapsed} /><div title="Demo gateway status" className="flex items-center justify-center gap-2 border-t border-border p-3 font-mono text-[10px]"><span className="h-2 w-2 bg-warn-strong" />{!collapsed && "DARAJA · DEMO"}</div></div>
         </nav>
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          {m === "settings" ? <div className="min-h-0 flex-1 p-3"><TerminalSettings value={preferences} onApply={applyPreferences} /></div> : <>
+          {m === "inbox" || m === "outbox" ? <div className="min-h-0 flex-1 p-3"><MailCenter mail={mail} folder={m} /></div> : m === "settings" ? <div className="min-h-0 flex-1 p-3"><TerminalSettings value={preferences} onApply={applyPreferences} /></div> : <>
           <div className="grid h-16 shrink-0 grid-cols-4 gap-3 bg-background p-3 pb-0 box-content">
             <Kpi l="Active Properties" v="14,280" s="47 Counties Active" c="text-foreground" />
             <Kpi l="Gross Revenue (MTD)" v="KES 48,250,000.00" s="M-Pesa STK + Card" c="text-primary" />
