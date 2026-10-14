@@ -8,6 +8,13 @@
       "when": 1791463166452,
       "tag": "0000_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791968112920,
+      "tag": "0001_restrict_profiles_directory_to_admins",
+      "breakpoints": true
     }
   ]
 }
