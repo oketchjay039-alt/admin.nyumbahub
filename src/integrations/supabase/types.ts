@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_email: string
+          actor_id: string
+          actor_name: string
+          created_at: string
+          id: number
+        }
+        Insert: {
+          action: string
+          actor_email?: string
+          actor_id?: string
+          actor_name?: string
+          created_at?: string
+          id?: never
+        }
+        Update: {
+          action?: string
+          actor_email?: string
+          actor_id?: string
+          actor_name?: string
+          created_at?: string
+          id?: never
+        }
+        Relationships: []
+      }
       mail_attachments: {
         Row: {
           id: string
