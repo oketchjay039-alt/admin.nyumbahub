@@ -15,6 +15,13 @@
       "when": 1791968112920,
       "tag": "0001_restrict_profiles_directory_to_admins",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791968170712,
+      "tag": "0002_ops_audit_log",
+      "breakpoints": true
     }
   ]
 }
