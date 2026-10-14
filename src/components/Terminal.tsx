@@ -1,5 +1,6 @@
 import { useMemo, useReducer, useState, type ReactNode } from "react";
-import { Activity, BadgeCheck, Building2, CalendarRange, LifeBuoy, Search, Wallet, ChevronLeft, ChevronRight, RefreshCw, FileText, Image as ImageIcon, Settings, PanelLeftClose, PanelLeftOpen, Inbox, Send } from "lucide-react";
+import { Activity, BadgeCheck, Building2, CalendarRange, LifeBuoy, Search, Wallet, ChevronLeft, ChevronRight, RefreshCw, FileText, Image as ImageIcon, Settings, PanelLeftClose, PanelLeftOpen, Inbox, Send, Mail, ScrollText, ChevronDown } from "lucide-react";
+import { AuditLogModule } from "@/components/AuditLogModule";
 import { useMail } from "@/components/mail/useMail";
 import { MailCenter } from "@/components/mail/MailCenter";
 import { Button } from "@/components/ui/button";
@@ -7,17 +8,18 @@ import { TerminalSettings, LiveClock, DEFAULT_PREFERENCES, type TerminalPreferen
 import { TicketTriage } from "@/components/TicketTriage";
 import { COUNTIES, PAYMENTS, KYCS, PROPERTIES, PAYOUTS, TICKETS, kes, statusTone, type Payment, type Kyc, type Property, type Payout, type Ticket } from "@/lib/terminal-data";
 
-type ModuleKey = "overview" | "kyc" | "property" | "shortstay" | "mpesa" | "tickets" | "inbox" | "outbox" | "settings";
+type ModuleKey = "overview" | "kyc" | "property" | "shortstay" | "mpesa" | "tickets" | "inbox" | "outbox" | "audit" | "settings";
 
-const NAV: { key: ModuleKey; label: string; icon: typeof Activity }[] = [
+const NAV: { key: ModuleKey; label: string; icon: typeof Activity; group?: "mail" }[] = [
   { key: "overview", label: "Executive Overview", icon: Activity },
   { key: "kyc", label: "Identity & KYC Queue", icon: BadgeCheck },
   { key: "property", label: "Property Moderation", icon: Building2 },
   { key: "shortstay", label: "Short-Stay Ledger", icon: CalendarRange },
   { key: "mpesa", label: "M-Pesa Financials", icon: Wallet },
   { key: "tickets", label: "Support & Ticketing", icon: LifeBuoy },
-  { key: "inbox", label: "Inbox", icon: Inbox },
-  { key: "outbox", label: "Outbox", icon: Send },
+  { key: "inbox", label: "Inbox", icon: Inbox, group: "mail" },
+  { key: "outbox", label: "Outbox", icon: Send, group: "mail" },
+  { key: "audit", label: "Ops Audit Log", icon: ScrollText },
   { key: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -39,13 +41,14 @@ type Action =
   | { t: "payment"; id: string; status: string }
   | { t: "ticket"; id: string; status: string }
   | { t: "ticketPri"; id: string; priority: string }
-  | { t: "log"; msg: string };
+  | { t: "log"; msg: string }
+  | { t: "clearLog" };
 
 const stamp = () => new Date().toISOString().slice(11, 19);
 const upd = <T extends { id: string }>(arr: T[], id: string, patch: Partial<T>) => arr.map((r) => (r.id === id ? { ...r, ...patch } : r));
 
 function reducer(s: State, a: Action): State {
-  const log = (msg: string) => [`${stamp()} ${msg}`, ...s.log].slice(0, 30);
+  const log = (msg: string) => [`${stamp()} ${msg}`, ...s.log].slice(0, 500);
   switch (a.t) {
     case "module": return { ...s, module: a.m };
     case "select": return { ...s, selected: { ...s.selected, [a.m]: a.id } };
@@ -58,13 +61,14 @@ function reducer(s: State, a: Action): State {
     case "ticket": return { ...s, tickets: upd(s.tickets, a.id, { status: a.status }), log: log(`${a.id} -> ${a.status}`) };
     case "ticketPri": return { ...s, tickets: upd(s.tickets, a.id, { priority: a.priority }), log: log(`${a.id} PRIORITY -> ${a.priority} (AI)`) };
     case "log": return { ...s, log: log(a.msg) };
+    case "clearLog": return { ...s, log: [] };
   }
 }
 
 const init: State = {
   module: "overview", payments: PAYMENTS, kycs: KYCS, properties: PROPERTIES, payouts: PAYOUTS, tickets: TICKETS,
-  selected: { overview: PAYMENTS[0]?.id ?? null, kyc: KYCS[0]?.id ?? null, property: PROPERTIES[0]?.id ?? null, shortstay: null, mpesa: PAYOUTS[0]?.id ?? null, tickets: TICKETS[0]?.id ?? null, inbox: null, outbox: null, settings: null },
-  page: { overview: 0, kyc: 0, property: 0, shortstay: 0, mpesa: 0, tickets: 0, inbox: 0, outbox: 0, settings: 0 },
+  selected: { overview: PAYMENTS[0]?.id ?? null, kyc: KYCS[0]?.id ?? null, property: PROPERTIES[0]?.id ?? null, shortstay: null, mpesa: PAYOUTS[0]?.id ?? null, tickets: TICKETS[0]?.id ?? null, inbox: null, outbox: null, audit: null, settings: null },
+  page: { overview: 0, kyc: 0, property: 0, shortstay: 0, mpesa: 0, tickets: 0, inbox: 0, outbox: 0, audit: 0, settings: 0 },
   log: [],
 };
 
@@ -150,6 +154,7 @@ export function Terminal() {
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [mailOpen, setMailOpen] = useState(true);
   const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
   const applyPreferences = (next: TerminalPreferences) => {
     setPreferences(next);
@@ -331,20 +336,41 @@ export function Terminal() {
       <div className="flex min-h-0 flex-1">
         <nav aria-label="Modules" className={`flex shrink-0 flex-col justify-between border-r border-border bg-card ${collapsed ? "w-14" : "w-56"}`}>
           <div className="min-h-0 overflow-y-auto">
-            {NAV.map(({ key, label, icon: Icon }) => (
+            {NAV.map(({ key, label, icon: Icon, group }) => {
+              if (group === "mail" && key === "outbox") return null;
+              if (key === "audit" && !preferences.showAudit) return null;
+              if (group === "mail") {
+                const inMail = m === "inbox" || m === "outbox";
+                return (
+                  <div key="mail">
+                    <Button variant="ghost" aria-label="Mail" aria-expanded={mailOpen} title={collapsed ? "Mail" : undefined} onClick={() => { setMailOpen(!mailOpen || !inMail); if (!inMail) d({ t: "module", m: "inbox" }); }} className={`h-11 w-full gap-3 border-b border-border-subtle px-3 text-left text-xs ${collapsed ? "justify-center" : "justify-start"} ${inMail ? "font-semibold text-primary" : "hover:bg-muted"}`}>
+                      <span className="relative shrink-0"><Mail className="h-4 w-4" />{mail.unread > 0 && <span aria-label={`${mail.unread} unread`} className="absolute -right-2 -top-2 min-w-4 bg-active px-1 text-center font-mono text-[9px] font-bold leading-4 text-primary-foreground">{mail.unread > 99 ? "99+" : mail.unread}</span>}</span>
+                      {!collapsed && <>Mail<ChevronDown className={`ml-auto h-3 w-3 transition-transform ${mailOpen ? "" : "-rotate-90"}`} /></>}
+                    </Button>
+                    {mailOpen && (["inbox", "outbox"] as const).map((sub) => {
+                      const SubIcon = sub === "inbox" ? Inbox : Send;
+                      const subLabel = sub === "inbox" ? "Inbox" : "Outbox";
+                      return (
+                        <Button key={sub} variant="ghost" aria-label={subLabel} aria-current={m === sub ? "page" : undefined} title={collapsed ? subLabel : undefined} onClick={() => d({ t: "module", m: sub })} className={`h-9 w-full gap-3 border-b border-border-subtle text-left text-xs ${collapsed ? "justify-center px-3" : "justify-start pl-9 pr-3"} ${m === sub ? "border-l-2 border-l-active bg-active-soft font-semibold text-primary" : "hover:bg-muted"}`}>
+                          <SubIcon className="h-3.5 w-3.5 shrink-0" />{!collapsed && subLabel}
+                          {!collapsed && sub === "inbox" && mail.unread > 0 && <span className="ml-auto font-mono text-[10px] font-bold text-active">{mail.unread} NEW</span>}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                );
+              }
+              return (
               <Button key={key} variant="ghost" aria-label={label} aria-current={m === key ? "page" : undefined} title={collapsed ? label : undefined} onClick={() => d({ t: "module", m: key })} className={`h-11 w-full gap-3 border-b border-border-subtle px-3 text-left text-xs ${collapsed ? "justify-center" : "justify-start"} ${m === key ? "border-l-2 border-l-active bg-active-soft font-semibold text-primary" : "hover:bg-muted"}`}>
-                <span className="relative shrink-0"><Icon className="h-4 w-4" />{key === "inbox" && mail.unread > 0 && <span aria-label={`${mail.unread} unread`} className="absolute -right-2 -top-2 min-w-4 bg-active px-1 text-center font-mono text-[9px] font-bold leading-4 text-primary-foreground">{mail.unread > 99 ? "99+" : mail.unread}</span>}</span>{!collapsed && label}{!collapsed && key === "inbox" && mail.unread > 0 && <span className="ml-auto font-mono text-[10px] font-bold text-active">{mail.unread} NEW</span>}
+                <Icon className="h-4 w-4 shrink-0" />{!collapsed && label}{!collapsed && key === "audit" && s.log.length > 0 && <span className="ml-auto font-mono text-[10px] text-muted-foreground">{s.log.length}</span>}
               </Button>
-            ))}
-            {!collapsed && preferences.showAudit && <div className="p-3">
-              <div className="mb-1 font-mono text-[10px] uppercase text-muted-foreground">Ops Audit Log</div>
-              <div className="max-h-48 space-y-0.5 overflow-auto font-mono text-[10px]">{s.log.length ? s.log.map((l, i) => <div key={i} className="truncate">{l}</div>) : <div className="text-muted-foreground">— no actions —</div>}</div>
-            </div>}
+              );
+            })}
           </div>
           <div className="shrink-0"><LiveClock timezone={preferences.timezone} hour12={preferences.hour12} collapsed={collapsed} /><div title="Demo gateway status" className="flex items-center justify-center gap-2 border-t border-border p-3 font-mono text-[10px]"><span className="h-2 w-2 bg-warn-strong" />{!collapsed && "DARAJA · DEMO"}</div></div>
         </nav>
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          {m === "inbox" || m === "outbox" ? <div className="min-h-0 flex-1 p-3"><MailCenter mail={mail} folder={m} /></div> : m === "settings" ? <div className="min-h-0 flex-1 p-3"><TerminalSettings value={preferences} onApply={applyPreferences} /></div> : <>
+          {m === "audit" ? <div className="min-h-0 flex-1 p-3"><AuditLogModule log={s.log} onClear={() => d({ t: "clearLog" })} /></div> : m === "inbox" || m === "outbox" ? <div className="min-h-0 flex-1 p-3"><MailCenter mail={mail} folder={m} /></div> : m === "settings" ? <div className="min-h-0 flex-1 p-3"><TerminalSettings value={preferences} onApply={applyPreferences} /></div> : <>
           <div className="grid h-16 shrink-0 grid-cols-4 gap-3 bg-background p-3 pb-0 box-content">
             <Kpi l="Active Properties" v="14,280" s="47 Counties Active" c="text-foreground" />
             <Kpi l="Gross Revenue (MTD)" v="KES 48,250,000.00" s="M-Pesa STK + Card" c="text-primary" />
