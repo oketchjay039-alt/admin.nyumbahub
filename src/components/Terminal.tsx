@@ -338,6 +338,7 @@ export function Terminal() {
           <div className="min-h-0 overflow-y-auto">
             {NAV.map(({ key, label, icon: Icon, group }) => {
               if (group === "mail" && key === "outbox") return null;
+              if (key === "audit" && !preferences.showAudit) return null;
               if (group === "mail") {
                 const inMail = m === "inbox" || m === "outbox";
                 return (
