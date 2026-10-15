@@ -147,7 +147,11 @@ const Section = ({ h }: { h: string }) => <div className="font-mono text-[10px] 
 export function Terminal() {
   const mail = useMail();
   const me = mail.me ? { full_name: mail.me.full_name, isSuperAdmin: mail.isSuperAdmin } : null;
-  const [s, d] = useReducer(reducer, init);
+  const [s, rawD] = useReducer(reducer, init);
+  const [authNotice, setAuthNotice] = useState(false);
+  const signedIn = !!mail.me;
+  const requireSignIn = () => { if (signedIn) return true; setAuthNotice(true); return false; };
+  const d = (a: Action) => { if (AUDITABLE.has(a.t) && !requireSignIn()) return; if (a.t === "module" && a.m !== undefined) setAuthNotice(false); rawD(a); };
   const audit = useAuditLog(s.log, mail.me ? mail.session?.user.id ?? null : null);
   const [q, setQ] = useState("");
   const [county, setCounty] = useState("Nairobi County");
@@ -158,6 +162,7 @@ export function Terminal() {
   const [mailOpen, setMailOpen] = useState(true);
   const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
   const applyPreferences = (next: TerminalPreferences) => {
+    if (!requireSignIn()) return;
     setPreferences(next);
     setCounty(next.county);
     setAllCounties(next.allCounties);
@@ -183,7 +188,7 @@ export function Terminal() {
   const sel = s.selected[m];
   const gridProps = { selected: sel, onSelect: (id: string) => { d({ t: "select", m, id }); setReason(""); }, page: s.page[m], onPage: (p: number) => d({ t: "page", m, p }) };
 
-  const simulate = (key: string, fn: () => void) => { setBusy(key); setTimeout(() => { fn(); setBusy(null); }, 700); };
+  const simulate = (key: string, fn: () => void) => { if (!requireSignIn()) return; setBusy(key); setTimeout(() => { fn(); setBusy(null); }, 700); };
 
   let grid: ReactNode = null;
   let inspector: ReactNode = null;
@@ -371,6 +376,12 @@ export function Terminal() {
           <div className="shrink-0"><LiveClock timezone={preferences.timezone} hour12={preferences.hour12} collapsed={collapsed} /><div title="Demo gateway status" className="flex items-center justify-center gap-2 border-t border-border p-3 font-mono text-[10px]"><span className="h-2 w-2 bg-warn-strong" />{!collapsed && "DARAJA · DEMO"}</div></div>
         </nav>
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          {authNotice && !signedIn && (
+            <div role="alert" className="flex items-center justify-between gap-2 border-b border-border bg-active-soft px-3 py-1.5 font-mono text-[11px] text-primary">
+              <span>SIGN IN THROUGH MAIL TO MAKE CHANGES — EVERY ACTION IS RECORDED UNDER YOUR NAME.</span>
+              <span className="flex gap-1"><button className="btn-primary" onClick={() => d({ t: "module", m: "inbox" })}>Sign in</button><button className="btn-secondary" onClick={() => setAuthNotice(false)}>Dismiss</button></span>
+            </div>
+          )}
           {m === "audit" ? <div className="min-h-0 flex-1 p-3"><AuditLogModule entries={audit.entries} unsaved={audit.unsaved} signedIn={!!mail.me} /></div> : m === "inbox" || m === "outbox" ? <div className="min-h-0 flex-1 p-3"><MailCenter mail={mail} folder={m} /></div> : m === "settings" ? <div className="min-h-0 flex-1 p-3"><TerminalSettings value={preferences} onApply={applyPreferences} /></div> : <>
           <div className="grid h-16 shrink-0 grid-cols-4 gap-3 bg-background p-3 pb-0 box-content">
             <Kpi l="Active Properties" v="14,280" s="47 Counties Active" c="text-foreground" />
