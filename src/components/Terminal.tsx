@@ -1,6 +1,6 @@
 import { useMemo, useReducer, useState, type ReactNode } from "react";
 import { Activity, BadgeCheck, Building2, CalendarRange, LifeBuoy, Search, Wallet, ChevronLeft, ChevronRight, RefreshCw, FileText, Image as ImageIcon, Settings, PanelLeftClose, PanelLeftOpen, Inbox, Send, Mail, ScrollText, ChevronDown } from "lucide-react";
-import { AuditLogModule } from "@/components/AuditLogModule";
+import { AuditLogModule, useAuditLog } from "@/components/AuditLogModule";
 import { useMail } from "@/components/mail/useMail";
 import { MailCenter } from "@/components/mail/MailCenter";
 import { Button } from "@/components/ui/button";
@@ -148,6 +148,7 @@ export function Terminal() {
   const mail = useMail();
   const me = mail.me ? { full_name: mail.me.full_name, isSuperAdmin: mail.isSuperAdmin } : null;
   const [s, d] = useReducer(reducer, init);
+  const audit = useAuditLog(s.log, mail.me ? mail.session?.user.id ?? null : null);
   const [q, setQ] = useState("");
   const [county, setCounty] = useState("Nairobi County");
   const [allCounties, setAllCounties] = useState(true);
@@ -362,7 +363,7 @@ export function Terminal() {
               }
               return (
               <Button key={key} variant="ghost" aria-label={label} aria-current={m === key ? "page" : undefined} title={collapsed ? label : undefined} onClick={() => d({ t: "module", m: key })} className={`h-11 w-full gap-3 border-b border-border-subtle px-3 text-left text-xs ${collapsed ? "justify-center" : "justify-start"} ${m === key ? "border-l-2 border-l-active bg-active-soft font-semibold text-primary" : "hover:bg-muted"}`}>
-                <Icon className="h-4 w-4 shrink-0" />{!collapsed && label}{!collapsed && key === "audit" && s.log.length > 0 && <span className="ml-auto font-mono text-[10px] text-muted-foreground">{s.log.length}</span>}
+                <Icon className="h-4 w-4 shrink-0" />{!collapsed && label}{!collapsed && key === "audit" && audit.entries.length > 0 && <span className="ml-auto font-mono text-[10px] text-muted-foreground">{audit.entries.length}</span>}
               </Button>
               );
             })}
@@ -370,7 +371,7 @@ export function Terminal() {
           <div className="shrink-0"><LiveClock timezone={preferences.timezone} hour12={preferences.hour12} collapsed={collapsed} /><div title="Demo gateway status" className="flex items-center justify-center gap-2 border-t border-border p-3 font-mono text-[10px]"><span className="h-2 w-2 bg-warn-strong" />{!collapsed && "DARAJA · DEMO"}</div></div>
         </nav>
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          {m === "audit" ? <div className="min-h-0 flex-1 p-3"><AuditLogModule log={s.log} onClear={() => d({ t: "clearLog" })} /></div> : m === "inbox" || m === "outbox" ? <div className="min-h-0 flex-1 p-3"><MailCenter mail={mail} folder={m} /></div> : m === "settings" ? <div className="min-h-0 flex-1 p-3"><TerminalSettings value={preferences} onApply={applyPreferences} /></div> : <>
+          {m === "audit" ? <div className="min-h-0 flex-1 p-3"><AuditLogModule entries={audit.entries} unsaved={audit.unsaved} signedIn={!!mail.me} /></div> : m === "inbox" || m === "outbox" ? <div className="min-h-0 flex-1 p-3"><MailCenter mail={mail} folder={m} /></div> : m === "settings" ? <div className="min-h-0 flex-1 p-3"><TerminalSettings value={preferences} onApply={applyPreferences} /></div> : <>
           <div className="grid h-16 shrink-0 grid-cols-4 gap-3 bg-background p-3 pb-0 box-content">
             <Kpi l="Active Properties" v="14,280" s="47 Counties Active" c="text-foreground" />
             <Kpi l="Gross Revenue (MTD)" v="KES 48,250,000.00" s="M-Pesa STK + Card" c="text-primary" />
