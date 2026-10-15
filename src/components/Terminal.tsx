@@ -44,6 +44,9 @@ type Action =
   | { t: "log"; msg: string }
   | { t: "clearLog" };
 
+/** Operational changes that land in the audit log — blocked until an admin signs in through Mail. */
+const AUDITABLE = new Set<Action["t"]>(["kyc", "prop", "commission", "payout", "payment", "ticket", "ticketPri", "log", "clearLog"]);
+
 const stamp = () => new Date().toISOString().slice(11, 19);
 const upd = <T extends { id: string }>(arr: T[], id: string, patch: Partial<T>) => arr.map((r) => (r.id === id ? { ...r, ...patch } : r));
 
@@ -151,7 +154,7 @@ export function Terminal() {
   const [authNotice, setAuthNotice] = useState(false);
   const signedIn = !!mail.me;
   const requireSignIn = () => { if (signedIn) return true; setAuthNotice(true); return false; };
-  const d = (a: Action) => { if (AUDITABLE.has(a.t) && !requireSignIn()) return; if (a.t === "module" && a.m !== undefined) setAuthNotice(false); rawD(a); };
+  const d = (a: Action) => { if (AUDITABLE.has(a.t) && !requireSignIn()) return; if (a.t === "module") setAuthNotice(false); rawD(a); };
   const audit = useAuditLog(s.log, mail.me ? mail.session?.user.id ?? null : null);
   const [q, setQ] = useState("");
   const [county, setCounty] = useState("Nairobi County");
