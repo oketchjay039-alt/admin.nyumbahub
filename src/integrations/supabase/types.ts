@@ -165,6 +165,108 @@ export type Database = {
           },
         ]
       }
+      mpesa_settings: {
+        Row: {
+          daily_payout_max: number
+          id: number
+          per_txn_max: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          daily_payout_max?: number
+          id?: number
+          per_txn_max?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          daily_payout_max?: number
+          id?: number
+          per_txn_max?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      mpesa_transactions: {
+        Row: {
+          account_ref: string
+          amount: number
+          approved_by: string | null
+          approved_by_name: string | null
+          checkout_request_id: string | null
+          completed_at: string | null
+          conversation_id: string | null
+          created_at: string
+          description: string
+          direction: string
+          id: string
+          idempotency_key: string
+          initiated_by: string
+          initiated_by_name: string
+          merchant_request_id: string | null
+          originator_conversation_id: string | null
+          phone: string
+          receipt: string | null
+          rejected_reason: string | null
+          result_code: number | null
+          result_desc: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_ref?: string
+          amount: number
+          approved_by?: string | null
+          approved_by_name?: string | null
+          checkout_request_id?: string | null
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          description?: string
+          direction: string
+          id?: string
+          idempotency_key: string
+          initiated_by: string
+          initiated_by_name?: string
+          merchant_request_id?: string | null
+          originator_conversation_id?: string | null
+          phone: string
+          receipt?: string | null
+          rejected_reason?: string | null
+          result_code?: number | null
+          result_desc?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          account_ref?: string
+          amount?: number
+          approved_by?: string | null
+          approved_by_name?: string | null
+          checkout_request_id?: string | null
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          description?: string
+          direction?: string
+          id?: string
+          idempotency_key?: string
+          initiated_by?: string
+          initiated_by_name?: string
+          merchant_request_id?: string | null
+          originator_conversation_id?: string | null
+          phone?: string
+          receipt?: string | null
+          rejected_reason?: string | null
+          result_code?: number | null
+          result_desc?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           active: boolean
