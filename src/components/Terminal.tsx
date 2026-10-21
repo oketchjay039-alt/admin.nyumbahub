@@ -1,5 +1,6 @@
 import { useMemo, useReducer, useState, type ReactNode } from "react";
-import { Activity, BadgeCheck, Building2, CalendarRange, LifeBuoy, Search, Wallet, ChevronLeft, ChevronRight, RefreshCw, FileText, Image as ImageIcon, Settings, PanelLeftClose, PanelLeftOpen, Inbox, Send, Mail, ScrollText, ChevronDown } from "lucide-react";
+import { Activity, BadgeCheck, Building2, CalendarRange, LifeBuoy, Search, Wallet, ChevronLeft, ChevronRight, RefreshCw, FileText, Image as ImageIcon, Settings, PanelLeftClose, PanelLeftOpen, Inbox, Send, Mail, ScrollText, ChevronDown, Landmark } from "lucide-react";
+import { MpesaGateway } from "@/components/MpesaGateway";
 import { AuditLogModule, useAuditLog } from "@/components/AuditLogModule";
 import { useMail } from "@/components/mail/useMail";
 import { MailCenter } from "@/components/mail/MailCenter";
@@ -8,7 +9,7 @@ import { TerminalSettings, LiveClock, DEFAULT_PREFERENCES, type TerminalPreferen
 import { TicketTriage } from "@/components/TicketTriage";
 import { COUNTIES, PAYMENTS, KYCS, PROPERTIES, PAYOUTS, TICKETS, kes, statusTone, type Payment, type Kyc, type Property, type Payout, type Ticket } from "@/lib/terminal-data";
 
-type ModuleKey = "overview" | "kyc" | "property" | "shortstay" | "mpesa" | "tickets" | "inbox" | "outbox" | "audit" | "settings";
+type ModuleKey = "overview" | "kyc" | "property" | "shortstay" | "mpesa" | "tickets" | "gateway" | "inbox" | "outbox" | "audit" | "settings";
 
 const NAV: { key: ModuleKey; label: string; icon: typeof Activity; group?: "mail" }[] = [
   { key: "overview", label: "Executive Overview", icon: Activity },
@@ -16,6 +17,7 @@ const NAV: { key: ModuleKey; label: string; icon: typeof Activity; group?: "mail
   { key: "property", label: "Property Moderation", icon: Building2 },
   { key: "shortstay", label: "Short-Stay Ledger", icon: CalendarRange },
   { key: "mpesa", label: "M-Pesa Financials", icon: Wallet },
+  { key: "gateway", label: "M-Pesa Gateway", icon: Landmark },
   { key: "tickets", label: "Support & Ticketing", icon: LifeBuoy },
   { key: "inbox", label: "Inbox", icon: Inbox, group: "mail" },
   { key: "outbox", label: "Outbox", icon: Send, group: "mail" },
@@ -70,8 +72,8 @@ function reducer(s: State, a: Action): State {
 
 const init: State = {
   module: "overview", payments: PAYMENTS, kycs: KYCS, properties: PROPERTIES, payouts: PAYOUTS, tickets: TICKETS,
-  selected: { overview: PAYMENTS[0]?.id ?? null, kyc: KYCS[0]?.id ?? null, property: PROPERTIES[0]?.id ?? null, shortstay: null, mpesa: PAYOUTS[0]?.id ?? null, tickets: TICKETS[0]?.id ?? null, inbox: null, outbox: null, audit: null, settings: null },
-  page: { overview: 0, kyc: 0, property: 0, shortstay: 0, mpesa: 0, tickets: 0, inbox: 0, outbox: 0, audit: 0, settings: 0 },
+  selected: { overview: PAYMENTS[0]?.id ?? null, kyc: KYCS[0]?.id ?? null, property: PROPERTIES[0]?.id ?? null, shortstay: null, mpesa: PAYOUTS[0]?.id ?? null, tickets: TICKETS[0]?.id ?? null, gateway: null, inbox: null, outbox: null, audit: null, settings: null },
+  page: { overview: 0, kyc: 0, property: 0, shortstay: 0, mpesa: 0, tickets: 0, gateway: 0, inbox: 0, outbox: 0, audit: 0, settings: 0 },
   log: [],
 };
 
@@ -385,7 +387,7 @@ export function Terminal() {
               <span className="flex gap-1"><button className="btn-primary" onClick={() => d({ t: "module", m: "inbox" })}>Sign in</button><button className="btn-secondary" onClick={() => setAuthNotice(false)}>Dismiss</button></span>
             </div>
           )}
-          {m === "audit" ? <div className="min-h-0 flex-1 p-3"><AuditLogModule entries={audit.entries} unsaved={audit.unsaved} signedIn={!!mail.me} /></div> : m === "inbox" || m === "outbox" ? <div className="min-h-0 flex-1 p-3"><MailCenter mail={mail} folder={m} /></div> : m === "settings" ? <div className="min-h-0 flex-1 p-3"><TerminalSettings value={preferences} onApply={applyPreferences} /></div> : <>
+          {m === "audit" ? <div className="min-h-0 flex-1 p-3"><AuditLogModule entries={audit.entries} unsaved={audit.unsaved} signedIn={!!mail.me} /></div> : m === "inbox" || m === "outbox" ? <div className="min-h-0 flex-1 p-3"><MailCenter mail={mail} folder={m} /></div> : m === "gateway" ? <div className="min-h-0 flex-1 p-3"><MpesaGateway signedIn={signedIn} myId={mail.session?.user.id ?? null} onSignIn={() => d({ t: "module", m: "inbox" })} /></div> : m === "settings" ? <div className="min-h-0 flex-1 p-3"><TerminalSettings value={preferences} onApply={applyPreferences} /></div> : <>
           <div className="grid h-16 shrink-0 grid-cols-4 gap-3 bg-background p-3 pb-0 box-content">
             <Kpi l="Active Properties" v="14,280" s="47 Counties Active" c="text-foreground" />
             <Kpi l="Gross Revenue (MTD)" v="KES 48,250,000.00" s="M-Pesa STK + Card" c="text-primary" />
