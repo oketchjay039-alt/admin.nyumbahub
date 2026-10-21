@@ -161,3 +161,14 @@ export const updateLimits = createServerFn({ method: "POST" })
     await m.systemAudit(context.userId, `MPESA LIMITS -> per txn KES ${data.perTxnMax}, daily payouts KES ${data.dailyPayoutMax}`);
     return { ok: true };
   });
+
+export const listTransactions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin.from("mpesa_transactions")
+      .select("id,direction,phone,amount,account_ref,description,status,receipt,result_desc,initiated_by,initiated_by_name,approved_by_name,rejected_reason,created_at")
+      .order("created_at", { ascending: false }).limit(200);
+    return data ?? [];
+  });
